@@ -1,0 +1,15 @@
+# Core dependencies for QA RAG chatbot
+streamlit>=1.29.0
+langchain>=0.1.0
+langchain-community>=0.0.10
+langchain-openai>=0.0.5
+langchain-chroma>=0.1.0
+chromadb>=0.4.22
+pypdf2>=3.0.1
+python-docx>=1.1.0
+tiktoken>=0.5.2
+openai>=1.6.0
+python-dotenv>=1.0.0
+
+# Additional utilities for document processing
+docx2txt>=0.8
