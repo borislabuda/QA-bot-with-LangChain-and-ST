@@ -7,6 +7,8 @@ QA RAG chatbot without fancy styling - focused on functionality.
 
 import os
 import logging
+import gc
+import time
 from typing import List, Dict, Any
 from pathlib import Path
 
@@ -20,6 +22,42 @@ from src.qa_chain_manager import QAChainManager
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+def cleanup_temp_files(temp_file_paths: List[str], temp_dir: Path = None):
+    """Clean up temporary files with robust error handling."""
+    if not temp_file_paths and not temp_dir:
+        return
+    
+    try:
+        # Force garbage collection to release file handles
+        gc.collect()
+        time.sleep(0.1)  # Small delay to ensure handles are released
+        
+        # Remove individual files
+        for temp_file_path in temp_file_paths:
+            try:
+                file_path = Path(temp_file_path)
+                if file_path.exists():
+                    file_path.unlink()
+                    logger.info(f"Deleted temporary file: {temp_file_path}")
+            except Exception as e:
+                logger.warning(f"Could not delete file {temp_file_path}: {str(e)}")
+        
+        # Remove directory if specified and empty
+        if temp_dir and temp_dir.exists():
+            try:
+                # Check if directory is empty
+                if not any(temp_dir.iterdir()):
+                    temp_dir.rmdir()
+                    logger.info(f"Deleted temporary directory: {temp_dir}")
+                else:
+                    logger.warning(f"Directory {temp_dir} not empty, skipping deletion")
+            except Exception as e:
+                logger.warning(f"Could not delete directory {temp_dir}: {str(e)}")
+                
+    except Exception as e:
+        logger.error(f"Error during cleanup: {str(e)}")
 
 
 def initialize_session_state():
@@ -145,17 +183,49 @@ def process_uploaded_files(uploaded_files):
         return
     
     try:
-        # Create temporary directory for uploaded files
-        temp_dir = Path("./temp_uploads")
-        temp_dir.mkdir(exist_ok=True)
+        # Create temporary directory for uploaded files with error handling
+        # Try user temp directory first, fall back to local directory
+        import tempfile
+        try:
+            # Use system temp directory which usually has proper permissions
+            temp_base = Path(tempfile.gettempdir()) / "qa_bot_uploads"
+            temp_base.mkdir(exist_ok=True)
+            temp_dir = temp_base / f"upload_{int(time.time())}"
+            temp_dir.mkdir(exist_ok=True)
+        except Exception:
+            # Fall back to local directory
+            temp_dir = Path("./temp_uploads")
+            temp_dir.mkdir(exist_ok=True)
         
-        # Save uploaded files temporarily
+        # Ensure we have write permissions
+        test_file = temp_dir / "test_write.tmp"
+        try:
+            with open(test_file, "w") as f:
+                f.write("test")
+            test_file.unlink()  # Clean up test file
+        except PermissionError:
+            st.error("Permission denied: Cannot write to temporary directory. Please check folder permissions.")
+            return
+        except Exception as e:
+            st.error(f"Error testing write permissions: {str(e)}")
+            return
+        
+        # Save uploaded files temporarily with proper file handling
         temp_file_paths = []
         for uploaded_file in uploaded_files:
             temp_file_path = temp_dir / uploaded_file.name
-            with open(temp_file_path, "wb") as f:
-                f.write(uploaded_file.getbuffer())
-            temp_file_paths.append(str(temp_file_path))
+            try:
+                # Use context manager to ensure file is properly closed
+                with open(temp_file_path, "wb") as f:
+                    f.write(uploaded_file.getbuffer())
+                    f.flush()  # Ensure data is written to disk
+                    os.fsync(f.fileno())  # Force write to disk
+                temp_file_paths.append(str(temp_file_path))
+                logger.info(f"Saved temporary file: {temp_file_path}")
+            except Exception as e:
+                logger.error(f"Error saving file {uploaded_file.name}: {str(e)}")
+                st.error(f"Error saving file {uploaded_file.name}: {str(e)}")
+                return
         
         # Initialize document loader
         loader = DocumentLoader()
@@ -164,23 +234,25 @@ def process_uploaded_files(uploaded_files):
         with st.spinner("Processing documents..."):
             documents = loader.load_multiple_files(temp_file_paths)
             
+            # Force garbage collection to release any file handles
+            gc.collect()
+            time.sleep(0.1)
+            
             if documents:
                 # Add to vector store
                 doc_ids = st.session_state.vector_store_manager.add_documents(documents)
                 st.success(f"Successfully processed {len(documents)} document chunks from {len(uploaded_files)} files")
                 st.session_state.documents_loaded = True
-                
-                # Clean up temporary files
-                for temp_file_path in temp_file_paths:
-                    Path(temp_file_path).unlink(missing_ok=True)
-                temp_dir.rmdir()
-                
             else:
                 st.error("No documents could be processed")
-    
+                
     except Exception as e:
         st.error(f"Error processing files: {str(e)}")
         logger.error(f"Error processing uploaded files: {str(e)}")
+    
+    finally:
+        # Clean up temporary files with better error handling
+        cleanup_temp_files(temp_file_paths if 'temp_file_paths' in locals() else [], temp_dir if 'temp_dir' in locals() else None)
 
 
 def process_directory(directory_path):

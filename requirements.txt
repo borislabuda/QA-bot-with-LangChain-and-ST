@@ -1,15 +1,33 @@
-# Core dependencies for QA RAG chatbot
-streamlit>=1.29.0
+# Core dependencies for Enhanced QA RAG chatbot
+# Updated: August 2025 for production-ready deployment
+
+# Web Framework
+streamlit>=1.47.0
+
+# LangChain Framework (Enhanced RAG Pipeline)
 langchain>=0.1.0
 langchain-community>=0.0.10
 langchain-openai>=0.0.5
 langchain-chroma>=0.1.0
+
+# Vector Database & Embeddings
 chromadb>=0.4.22
+openai>=1.6.0
+tiktoken>=0.5.2
+
+# Document Processing (Enhanced with error handling)
 pypdf2>=3.0.1
 python-docx>=1.1.0
-tiktoken>=0.5.2
-openai>=1.6.0
+docx2txt>=0.8
+
+# Configuration & Environment Management
 python-dotenv>=1.0.0
 
-# Additional utilities for document processing
-docx2txt>=0.8
+# Optional: Enhanced document processing
+# unstructured>=0.11.0
+# sentence-transformers>=2.2.0
+
+# Development & Testing (Optional)
+# pytest>=7.0.0
+# black>=23.0.0
+# flake8>=6.0.0

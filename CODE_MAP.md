@@ -1,7 +1,14 @@
-# QA RAG Chatbot - Code Architecture Map
+# QA RAG Chatbot - Enhanced Code Architecture Map
 
 ## Overview
-This document provides a visual representation of the code architecture, showing how classes and functions are interconnected throughout the QA RAG Chatbot system.
+This document provides a comprehensive visual representation of the enhanced code architecture, showing how classes, functions, and new utilities are interconnected throughout the production-ready QA RAG Chatbot system.
+
+## Recent Enhancements Summary
+- ✅ **Enhanced File Handling**: Robust temporary file management with system temp directory
+- ✅ **Advanced Error Recovery**: Comprehensive cleanup and error handling mechanisms  
+- ✅ **UI Improvements**: Clean interface with hidden developer tools
+- ✅ **Configuration Management**: Automated Streamlit optimization
+- ✅ **Security Enhancements**: Safe file operations with permission validation
 
 ## System Architecture Diagram
 
@@ -56,7 +63,7 @@ This document provides a visual representation of the code architecture, showing
 
 ## Detailed Class/Function Relationships
 
-### 1. Main Application Flow (app.py)
+### 1. Enhanced Application Flow (app.py)
 
 ```
 main()
@@ -64,8 +71,11 @@ main()
 ├── initialize_session_state()
 ├── configure_api_key()
 ├── document_upload_section()
-│   ├── process_uploaded_files()
-│   │   └── DocumentLoader.load_multiple_files()
+│   ├── process_uploaded_files() [ENHANCED]
+│   │   ├── tempfile.gettempdir() [NEW]
+│   │   ├── Permission testing [NEW]
+│   │   ├── DocumentLoader.load_multiple_files()
+│   │   └── cleanup_temp_files() [NEW]
 │   ├── process_directory()
 │   │   └── DocumentLoader.load_directory()
 │   └── clear_vector_store()
@@ -79,6 +89,23 @@ main()
 └── sidebar_info()
     ├── VectorStoreManager.get_collection_info()
     └── QAChainManager.get_memory_summary()
+```
+
+### 1.1. New Utility Functions
+
+```
+cleanup_temp_files() [NEW]
+├── gc.collect() [Memory cleanup]
+├── time.sleep() [Handle release delay]
+├── Individual file deletion with error handling
+└── Directory cleanup with validation
+
+Enhanced File Handling [NEW]
+├── System temp directory detection
+├── Unique directory naming with timestamps
+├── Write permission validation
+├── Automatic fallback to local directory
+└── Robust error recovery mechanisms
 ```
 
 ### 2. DocumentLoader Class Hierarchy
@@ -280,49 +307,142 @@ test_setup.py
 └── test_qa_chain() → QAChainManager class
 ```
 
+## Enhanced Features & Configuration
+
+### 1. **Streamlit Configuration (.streamlit/config.toml)**
+```
+Configuration Management
+├── [global] → Application-wide settings
+├── [server] → Server optimization (headless mode, static serving)
+├── [browser] → Client settings (usage stats, server address)
+├── [theme] → UI theming (colors, backgrounds)
+├── [runner] → Execution settings (magic commands disabled)
+├── [logger] → Logging configuration (warning level)
+└── [client] → Client UI (minimal toolbar mode)
+```
+
+### 2. **Enhanced Error Handling & Recovery**
+```
+Error Management System
+├── File Permission Validation
+│   ├── System temp directory testing
+│   ├── Write permission verification
+│   └── Automatic fallback mechanisms
+├── Resource Cleanup
+│   ├── Garbage collection (gc.collect())
+│   ├── File handle release management
+│   └── Directory cleanup with validation
+├── User-Friendly Error Messages
+│   ├── Contextual error descriptions
+│   ├── Actionable solution suggestions
+│   └── System state preservation
+└── Recovery Mechanisms
+    ├── Automatic retry strategies
+    ├── Graceful degradation
+    └── State restoration capabilities
+```
+
+### 3. **UI/UX Enhancements**
+```
+Interface Improvements
+├── Hidden Developer Tools
+│   ├── Streamlit menu hiding
+│   ├── Footer/header removal
+│   └── ViewerBadge elimination
+├── Session State Protection
+│   ├── Debug information filtering
+│   ├── Accidental display prevention
+│   └── Clean user experience
+├── Real-time Monitoring
+│   ├── System resource tracking
+│   ├── Live configuration display
+│   └── Performance metrics
+└── Configuration Management
+    ├── API key input validation
+    ├── Environment variable detection
+    └── Multiple configuration sources
+```
+
+### 4. **Security & File Management**
+```
+Security Enhancements
+├── Secure Temporary Storage
+│   ├── System temp directory usage
+│   ├── Unique directory naming (timestamps)
+│   ├── Isolated file operations
+│   └── Automatic cleanup procedures
+├── Permission Management
+│   ├── Write permission testing
+│   ├── Directory access validation
+│   └── Error-safe operations
+├── File Handle Management
+│   ├── Context managers for file operations
+│   ├── Explicit file closure (flush, fsync)
+│   ├── Resource deallocation
+│   └── Memory cleanup (garbage collection)
+└── Error Recovery
+    ├── Robust exception handling
+    ├── Partial failure tolerance
+    └── System state preservation
+```
+
 ## Key Design Patterns
 
-### 1. **Singleton Pattern** (Session State)
+### 1. **Enhanced Singleton Pattern** (Session State)
 - `st.session_state` maintains single instances of managers
-- Prevents multiple database connections
+- Enhanced state protection and debugging prevention
+- Automatic context validation
 
-### 2. **Factory Pattern** (Document Loaders)
-- `DocumentLoader.load_single_document()` creates appropriate loader based on file type
-- Supports PDF, TXT, DOCX formats
+### 2. **Improved Factory Pattern** (Document Loaders)
+- `DocumentLoader.load_single_document()` with enhanced error handling
+- Robust file type detection and processing
+- Comprehensive error recovery mechanisms
 
-### 3. **Builder Pattern** (QA Chain)
-- `QAChainManager._create_qa_chain()` assembles complex chain from components
-- Configurable prompts and memory
+### 3. **Enhanced Builder Pattern** (QA Chain)
+- `QAChainManager._create_qa_chain()` with improved configuration
+- Better memory management and context handling
+- Enhanced prompt engineering and response formatting
 
-### 4. **Observer Pattern** (UI Updates)
-- Streamlit automatically re-renders on state changes
-- Real-time feedback to user actions
+### 4. **Advanced Observer Pattern** (UI Updates)
+- Streamlit with hidden developer tools and clean interface
+- Real-time system monitoring and status updates
+- Enhanced user feedback and error reporting
 
-### 5. **Strategy Pattern** (Search Methods)
-- `similarity_search()` vs `similarity_search_with_score()`
-- Different retrieval strategies based on requirements
+### 5. **Robust Strategy Pattern** (File Operations)
+- Multiple storage strategies (system temp vs local)
+- Automatic fallback mechanisms
+- Enhanced cleanup and error recovery strategies
 
-## Critical Connection Points
+## Critical Connection Points (Enhanced)
 
-### 1. **App → Components**
+### 1. **App → Enhanced Components**
 ```
-app.py functions → Core classes (DocumentLoader, VectorStoreManager, QAChainManager)
-```
-
-### 2. **Components → External APIs**
-```
-VectorStoreManager → OpenAI Embeddings API
-QAChainManager → OpenAI Chat API
-```
-
-### 3. **Components → Storage**
-```
-VectorStoreManager → ChromaDB → File System
+app.py functions → Enhanced core classes with error recovery
+├── Robust file handling
+├── Enhanced error reporting
+└── Improved user experience
 ```
 
-### 4. **Memory → Context**
+### 2. **Components → External APIs (Secured)**
 ```
-QAChainManager.memory → ConversationSummaryBufferMemory → Chat History
+Enhanced VectorStoreManager → OpenAI Embeddings API (with error handling)
+Enhanced QAChainManager → OpenAI Chat API (with retry mechanisms)
 ```
 
-This code map provides a comprehensive view of how all components interact within the QA RAG Chatbot system, making it easier to understand the architecture and debug issues.
+### 3. **Components → Secure Storage**
+```
+Enhanced VectorStoreManager → ChromaDB → Secure File System Operations
+├── Permission validation
+├── Automatic cleanup
+└── Error recovery
+```
+
+### 4. **Enhanced Memory → Context Management**
+```
+Enhanced QAChainManager.memory → ConversationalMemory → Persistent Chat History
+├── Better context management
+├── Memory optimization
+└── Enhanced conversation tracking
+```
+
+This enhanced code map provides a comprehensive view of the production-ready QA RAG Chatbot system with all recent improvements, security enhancements, and robust error handling mechanisms.
