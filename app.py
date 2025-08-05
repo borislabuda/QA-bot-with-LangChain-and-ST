@@ -405,6 +405,24 @@ def main():
     # Initialize session state
     initialize_session_state()
     
+    # Ensure no accidental session state display
+    if hasattr(st.session_state, '_debug') and st.session_state._debug:
+        st.session_state._debug = False
+    
+    # Hide Streamlit style and menu for cleaner look
+    hide_streamlit_style = """
+        <style>
+        #MainMenu {visibility: hidden;}
+        footer {visibility: hidden;}
+        header {visibility: hidden;}
+        .stApp > header {display: none;}
+        .css-1jc7ptx, .e1ewe7hr3, .viewerBadge_container__1QSob,
+        .styles_viewerBadge__1yB5_, .viewerBadge_link__1S137,
+        .viewerBadge_text__1JaDK {display: none;}
+        </style>
+    """
+    st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+    
     # Main title
     st.title("🤖 QA RAG Chatbot")
     st.write("Upload documents and ask questions about their content using AI-powered retrieval.")
@@ -430,4 +448,14 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    # Check if running in Streamlit context
+    try:
+        import streamlit as st
+        # This will raise an exception if not in Streamlit context
+        st.session_state
+        main()
+    except:
+        print("ERROR: This script must be run with Streamlit!")
+        print("Please use: streamlit run app.py")
+        print("Or run: .\\run.bat")
+        exit(1)
